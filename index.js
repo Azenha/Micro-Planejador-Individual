@@ -28,10 +28,24 @@ sequelize.sync().then(() => {
  */
 app.get("/", async (_, res) => {
   try {
+    res.render("index");
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    res.status(500).json({ error: "An error occurred while fetching data." });
+  }
+});
+
+/**
+ * Serve the grocery list management page
+ * @name manageLists
+ * @type GET
+ */
+app.get("/lists", async (_, res) => {
+  try {
     const groceryLists = await GroceryList.findAll({
       include: [Product]
     });
-    res.render("index", { groceryLists });
+    res.render("lists", { groceryLists });
   } catch (error) {
     console.error("Error fetching data:", error);
     res.status(500).json({ error: "An error occurred while fetching data." });
@@ -48,7 +62,9 @@ app.post("/lists", async (req, res) => {
 
   try {
     const newList = await GroceryList.create({ name });
-    res.json(newList);
+    const template = pug.compileFile("views/includes/grocery-list.pug");
+    const markup = template({ list: newList });
+    res.send(markup);
   } catch (error) {
     console.error("Error creating grocery list:", error);
     res.status(500).json({ error: "An error occurred while creating the grocery list." });
