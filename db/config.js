@@ -33,4 +33,22 @@ const Product = sequelize.define('Product', {
   timestamps: false,
 });
 
-module.exports = { sequelize, Product };
+const GroceryList = sequelize.define('GroceryList', {
+  id: {
+    type: Sequelize.UUID,
+    defaultValue: Sequelize.UUIDV4,
+    primaryKey: true,
+  },
+  name: {
+    type: Sequelize.STRING,
+    allowNull: false,
+  },
+}, {
+  tableName: 'grocery_lists',
+  timestamps: false,
+});
+
+Product.belongsTo(GroceryList);
+GroceryList.hasMany(Product);
+
+module.exports = { sequelize, Product, GroceryList };
