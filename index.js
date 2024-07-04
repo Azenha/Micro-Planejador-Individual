@@ -1,5 +1,5 @@
 const express = require("express");
-const { sequelize, Product, GroceryList } = require("./db/config");
+const { sequelize, Product } = require("./db/config");
 const crypto = require("crypto");
 const pug = require("pug");
 const bodyParser = require("body-parser");
@@ -15,6 +15,7 @@ app.set("view engine", "pug");
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 
+// Sync the database
 sequelize.sync().then(() => {
   console.log('Database synced');
 }).catch(err => {
@@ -28,7 +29,8 @@ sequelize.sync().then(() => {
  */
 app.get("/", async (_, res) => {
   try {
-    res.render("index");
+    const products = await Product.findAll();
+    res.render("index", { products });
   } catch (error) {
     console.error("Error fetching data:", error);
     res.status(500).json({ error: "An error occurred while fetching data." });
@@ -36,195 +38,126 @@ app.get("/", async (_, res) => {
 });
 
 /**
- * Serve the grocery list management page
- * @name manageLists
- * @type GET
- */
-app.get("/lists", async (_, res) => {
-  try {
-    const groceryLists = await GroceryList.findAll({
-      include: [Product]
-    });
-    res.render("lists", { groceryLists });
-  } catch (error) {
-    console.error("Error fetching data:", error);
-    res.status(500).json({ error: "An error occurred while fetching data." });
-  }
-});
-
-/**
- * Create a new grocery list
- * @name createList
+ * Submit request - add new item
+ * @name submit
  * @type POST
  */
-app.post("/lists", async (req, res) => {
-  const { name } = req.body;
+app.post("/submit", async (req, res) => {
+  const product = {
+    id: crypto.randomUUID(),
+    name: req.body.name,
+    quantity: Number(req.body.quantity),
+    unit: req.body.unit,
+    value: Number(req.body.value),
+  };
+
+  const template = pug.compileFile("views/includes/product.pug");
 
   try {
-    const newList = await GroceryList.create({ name });
-    const template = pug.compileFile("views/includes/grocery-list.pug");
-    const markup = template({ list: newList });
+    await Product.create(product);
+    const markup = template({ product });
     res.send(markup);
   } catch (error) {
-    console.error("Error creating grocery list:", error);
-    res.status(500).json({ error: "An error occurred while creating the grocery list." });
+    console.log("ERROR", error);
+    res.status(500).json({ error: "An error occurred while adding the product." });
   }
 });
 
 /**
- * Add a product to a grocery list
- * @name addProduct
- * @type POST
- */
-app.post("/lists/:listId/products", async (req, res) => {
-  const { listId } = req.params;
-  const { name, quantity, unit, value } = req.body;
-
-  try {
-    const list = await GroceryList.findByPk(listId);
-    if (!list) {
-      return res.status(404).json({ error: "Grocery list not found." });
-    }
-
-    const product = await Product.create({
-      id: crypto.randomUUID(),
-      name,
-      quantity: Number(quantity),
-      unit,
-      value: Number(value),
-      GroceryListId: list.id,
-    });
-
-    res.json(product);
-  } catch (error) {
-    console.error("Error adding product to grocery list:", error);
-    res.status(500).json({ error: "An error occurred while adding the product to the grocery list." });
-  }
-});
-
-/**
- * Get all grocery lists
- * @name getAllLists
+ * Get by id request - get item by id
+ * @name :id
  * @type GET
  */
-app.get("/lists", async (req, res) => {
+app.get("/product/:id", async (req, res) => {
+  const id = req.params.id;
+  const template = pug.compileFile("views/includes/product.pug");
+
   try {
-    const lists = await GroceryList.findAll();
-    res.json(lists);
+    const product = await Product.findByPk(id);
+    if (product) {
+      const markup = template({ product });
+      res.send(markup);
+    } else {
+      res.status(404).send("Product not found");
+    }
   } catch (error) {
-    console.error("Error fetching grocery lists:", error);
-    res.status(500).json({ error: "An error occurred while fetching grocery lists." });
+    console.log("ERROR", error);
+    res.status(500).json({ error: "An error occurred while fetching the product." });
   }
 });
 
 /**
- * Get a single grocery list by ID
- * @name getList
+ * Edit form by id request - return edit form
+ * @name edit-form/:id
  * @type GET
  */
-app.get("/lists/:id", async (req, res) => {
-  const { id } = req.params;
+app.get("/edit-form/:id", async (req, res) => {
+  const id = req.params.id;
+  const template = pug.compileFile("views/includes/edit-product-form.pug");
 
   try {
-    const list = await GroceryList.findByPk(id, {
-      include: [Product]
-    });
-    if (!list) {
-      return res.status(404).json({ error: "Grocery list not found." });
+    const product = await Product.findByPk(id);
+    if (product) {
+      const markup = template({ product });
+      res.send(markup);
+    } else {
+      res.status(404).send("Product not found");
     }
-    res.json(list);
   } catch (error) {
-    console.error("Error fetching grocery list:", error);
-    res.status(500).json({ error: "An error occurred while fetching the grocery list." });
+    console.log("ERROR", error);
+    res.status(500).json({ error: "An error occurred while fetching the product for editing." });
   }
 });
 
 /**
- * Edit a grocery list by ID
- * @name editList
+ * Edit item by id request - return edited item
+ * @name edit/:id
  * @type PUT
  */
-app.put("/lists/:id", async (req, res) => {
-  const { id } = req.params;
-  const { name } = req.body;
+app.put("/edit/:id", async (req, res) => {
+  const id = req.params.id;
+  const productData = {
+    name: req.body.name,
+    quantity: Number(req.body.quantity),
+    unit: req.body.unit,
+    value: Number(req.body.value),
+  };
+
+  const template = pug.compileFile("views/includes/edit-product.pug");
 
   try {
-    const list = await GroceryList.findByPk(id);
-    if (!list) {
-      return res.status(404).json({ error: "Grocery list not found." });
+    const product = await Product.findByPk(id);
+    if (product) {
+      await product.update(productData);
+      const markup = template({ product });
+      res.send(markup);
+    } else {
+      res.status(404).send("Product not found");
     }
-
-    await list.update({ name });
-    res.json(list);
   } catch (error) {
-    console.error("Error updating grocery list:", error);
-    res.status(500).json({ error: "An error occurred while updating the grocery list." });
-  }
-});
-
-/**
- * Delete a grocery list by ID
- * @name deleteList
- * @type DELETE
- */
-app.delete("/lists/:id", async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    const list = await GroceryList.findByPk(id);
-    if (!list) {
-      return res.status(404).json({ error: "Grocery list not found." });
-    }
-
-    await list.destroy();
-    res.sendStatus(204);
-  } catch (error) {
-    console.error("Error deleting grocery list:", error);
-    res.status(500).json({ error: "An error occurred while deleting the grocery list." });
-  }
-});
-
-/**
- * Edit product by ID
- * @name editProduct
- * @type PUT
- */
-app.put("/lists/:listId/products/:productId", async (req, res) => {
-  const { productId } = req.params;
-  const { name, quantity, unit, value } = req.body;
-
-  try {
-    const product = await Product.findByPk(productId);
-    if (!product) {
-      return res.status(404).json({ error: "Product not found." });
-    }
-
-    await product.update({ name, quantity: Number(quantity), unit, value: Number(value) });
-    res.json(product);
-  } catch (error) {
-    console.error("Error updating product:", error);
+    console.log("ERROR", error);
     res.status(500).json({ error: "An error occurred while updating the product." });
   }
 });
 
 /**
- * Delete product by ID
- * @name deleteProduct
+ * Delete item by id request - delete item
+ * @name delete/:id
  * @type DELETE
  */
-app.delete("/lists/:listId/products/:productId", async (req, res) => {
-  const { productId } = req.params;
+app.delete("/delete/:id", async (req, res) => {
+  const id = req.params.id;
 
   try {
-    const product = await Product.findByPk(productId);
-    if (!product) {
-      return res.status(404).json({ error: "Product not found." });
+    const product = await Product.findByPk(id);
+    if (product) {
+      await product.destroy();
+      res.send("");
+    } else {
+      res.status(404).send("Product not found");
     }
-
-    await product.destroy();
-    res.sendStatus(204);
   } catch (error) {
-    console.error("Error deleting product:", error);
+    console.log("ERROR", error);
     res.status(500).json({ error: "An error occurred while deleting the product." });
   }
 });
