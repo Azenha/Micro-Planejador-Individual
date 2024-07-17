@@ -88,7 +88,7 @@ Durante o projeto foi alterado stack de tecnologias para tecnologias mais atuais
 
 ## Conclusões
 
-O projeto descrito para o desenvolvimento de uma aplicação de gerenciamento de listas de compras apresenta uma abordagem moderna e eficiente, utilizando tecnologias robustas e atuais. Com base na stack tecnológica escolhida, que inclui Oracle Cloud VM, Ubuntu Server, Caddy, Node.js com AdonisJS, Vue.js com Vite, e PostgreSQL, o projeto é estruturado para oferecer uma experiência de usuário fluida e escalável.
+O projeto visou o desenvolvimento de uma aplicação de gerenciamento de listas de compras com uma abordagem moderna e eficiente, utilizando tecnologias robustas e atuais. Com base na stack tecnológico escolhido, que inclui Oracle Cloud VM, Ubuntu Server, Caddy, Node.js com AdonisJS, Vue.js com Vite, e PostgreSQL, o projeto é estruturado para oferecer uma experiência de usuário fluida e escalável.
 
 A decisão de adotar uma abordagem code-first para o desenvolvimento, em detrimento do tradicional db-first, permite um controle preciso sobre a lógica da aplicação e a estrutura de dados, facilitando a manutenção e a evolução contínua do sistema. Isso é especialmente relevante dada a natureza dinâmica das aplicações web modernas, onde a flexibilidade e a adaptabilidade são fundamentais.
 
