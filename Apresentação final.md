@@ -38,17 +38,6 @@ Projeto de Sistemas para Internet
 
 # Tecnologias
 
-![bg right](Infra.png)
-
-* Infraestrutura e servidor
-    * Oracle Cloud Infrastructure
-    * Ubuntu Server
-    * Caddy
-
----
-
-# Tecnologias
-
 ![bg right](Backend.png)
 
 * Backend
@@ -134,3 +123,6 @@ Gestão de itens
 
 # Perguntas & Respostas
 
+Link do repositório
+
+![bg right:50% 50%](repo.gif)
